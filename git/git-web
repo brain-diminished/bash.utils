@@ -1,0 +1,65 @@
+#!/bin/bash
+
+remote_url()
+{
+  url=$(git remote get-url "$1")
+  echo $url | sed -re "s/git@([^:]*):/http:\/\/\1\//g" | sed -re "s/\.git//g"
+}
+
+branch_url()
+{
+  arr=(${1//// })
+  remote=${arr[0]}
+  branch=${arr[1]}
+  baseurl=$(remote_url "$remote")
+  echo "$baseurl/tree/$branch"
+}
+
+if ! [ $(git rev-parse --is-inside-work-tree) ]; then
+  exit
+fi
+
+if [ $1 ]; then
+  remote_url=$(git remote get-url $1 2>/dev/null)
+  if [ "$remote_url" ]; then
+    http=$(echo $remote_url | sed -re "s/git@([^:]*):/http:\/\/\1\//g" | sed -re "s/\.git//g")
+  else
+    $(git rev-parse --verify "$1" &>/dev/null)
+    if [ $? != 0 ]; then
+      echo "error: must specify a valid remote or branch" 1>&2
+      exit
+    fi
+    git branch | grep -w $1 > /dev/null
+    if [ $? = 0 ]
+    then
+      upstream=$(git upstream "$1")
+      upstream=$(git rev-parse --abbrev-ref "$1"@{upstream})
+      if [[ "$?" != 0 ]]; then
+        echo "error: no upstream set for local branch $1"
+        exit;
+      fi
+    else
+      git branch -r | grep -w $1 > /dev/null
+      if [ $? = 0 ]
+      then
+        upstream="$1"
+      fi
+    fi
+    arr=(${upstream//// })
+    remote=${arr[0]}
+    branch=${arr[1]}
+    baseurl=$( git remote get-url $remote )
+    http=$( echo $baseurl | sed -re "s/git@([^:]*):/http:\/\/\1\//g" | sed -re "s/\.git//g")"/tree/$branch"
+  fi
+else
+  upstream=$(git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null)
+  if [ $? != 0 ]; then
+    echo "error: HEAD is not tracking any remote branch" >&2
+    exit
+  fi
+  http=$(branch_url "$upstream")
+fi
+
+browser=$(git config core.browser)
+browser=${browser:-"xdg-open"}
+$browser "$http" 1> /dev/null
