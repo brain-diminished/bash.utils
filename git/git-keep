@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if ! [ $(is-git) ]; then exit 1; fi
+
+directory=${1:-.}
+if [ -f $directory ]; then
+  echo "error: $directory is a file" >&2
+  exit 1
+fi
+
+if ! [ "$(git check-ignore $directory)" ]; then
+  echo "error: $directory is not ignored" >&2
+  exit 1
+fi
+
+if ! [ -d $directory ]; then
+  mkdir -p $directory
+fi
+
+touch "$directory/.gitkeep"
+git add "$directory/.gitkeep" -f
