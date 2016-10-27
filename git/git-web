@@ -10,7 +10,8 @@ branch_url()
 {
   arr=(${1//// })
   remote=${arr[0]}
-  branch=${arr[1]}
+  branch="${arr[@]:1}"
+  branch="${branch// /"/"}"
   baseurl=$(remote_url "$remote")
   echo "$baseurl/tree/$branch"
 }
@@ -22,7 +23,7 @@ fi
 if [ $1 ]; then
   remote_url=$(git remote get-url $1 2>/dev/null)
   if [ "$remote_url" ]; then
-    http=$(echo $remote_url | sed -re "s/git@([^:]*):/http:\/\/\1\//g" | sed -re "s/\.git//g")
+    http=$(remote_url $1)
   else
     $(git rev-parse --verify "$1" &>/dev/null)
     if [ $? != 0 ]; then
@@ -45,17 +46,13 @@ if [ $1 ]; then
         upstream="$1"
       fi
     fi
-    arr=(${upstream//// })
-    remote=${arr[0]}
-    branch=${arr[1]}
-    baseurl=$( git remote get-url $remote )
-    http=$( echo $baseurl | sed -re "s/git@([^:]*):/http:\/\/\1\//g" | sed -re "s/\.git//g")"/tree/$branch"
+    http=$(branch_url $upstream)
   fi
 else
   upstream=$(git rev-parse --abbrev-ref HEAD@{upstream} 2>/dev/null)
   if [ $? != 0 ]; then
     echo "error: HEAD is not tracking any remote branch" >&2
-    exit
+    exit 1
   fi
   http=$(branch_url "$upstream")
 fi
