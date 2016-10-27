@@ -1,0 +1,8 @@
+#!/bin/bash
+is_git() {
+  if [ $(git rev-parse --is-inside-work-tree 2> /dev/null) ]; then
+    echo true
+  fi
+}
+
+is_git $*
