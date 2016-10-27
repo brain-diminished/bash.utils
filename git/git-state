@@ -1,0 +1,33 @@
+#!/bin/bash
+
+if ! [ $(git rev-parse --is-inside-work-tree) ]; then
+  exit
+fi
+
+git_status=$(git status --porcelain 2> /dev/null)
+if [ -n "$git_status" ]; then
+  echo "changed"
+  exit
+fi
+
+local=$(git current-branch)
+
+upstream=$(git rev-parse @{upstream} 2> /dev/null)
+if [ -z "$upstream" ]; then
+  echo "no-upstream"
+  exit
+fi
+
+compare=($(git rev-list --left-right --count "$local"..."$upstream"))
+
+if [[ ${compare[1]} > 0 ]]; then
+  echo "behind"
+  exit
+fi
+
+if [[ ${compare[0]} > 0 ]]; then
+  echo "ahead"
+  exit
+fi
+
+echo "up-to-date"
