@@ -1,0 +1,15 @@
+#!/bin/bash
+
+origin=$(which $1)
+res=()
+while [ "$origin" ]; do
+  origin=$(realpath -s "$origin")
+  res+=($origin)
+  cd $(dirname "$origin")
+  origin=$(readlink $origin)
+done
+
+if [[ ${#res[@]} = 0 ]]; then exit; fi
+
+arr="${res[@]}"
+echo -e "${arr// / "\033[1;34m->\033[0m" }"
