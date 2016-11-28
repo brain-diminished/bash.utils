@@ -1,0 +1,74 @@
+#!/bin/bash
+
+if [[ $# = 0 ]]; then
+  ########## WHEN SOURCED ##########
+  self="${BASH_SOURCE[0]}"
+
+  # reset style
+  PS1='\[$(style reset)\]'
+  
+  # title
+  PS1=$PS1'\[\e]0;${debian_chroot:+($debian_chroot)}\u: $(realpath "$PWD")$('$self' git_title)\a\]'
+  
+  # prompt
+  PS1=$PS1'${debian_chroot:+($debian_chroot)}'
+  if [ "$color_prompt" = yes ]; then
+    PS1=$PS1'\[$(style green)\]'
+    PS1=$PS1'\u'
+    PS1=$PS1'\[$(style bold white)\]'
+    PS1=$PS1':'
+    PS1=$PS1'\[$(style reset blue)\]'
+    PS1=$PS1'$(realpath "$PWD")'
+    PS1=$PS1'\[$('$self' git_color)\]'
+    PS1=$PS1'$('$self' git_branch)'
+    PS1=$PS1'\[$(style)\]'
+    PS1=$PS1' [$HISTCMD]'
+    PS1=$PS1'\[$(style bold)\]\$ '
+    
+    # reset style after cmd
+    trap "tput sgr0" DEBUG
+  else
+    PS1=$PS1'\u@\h:\w$(git_branch)\$ '
+  fi
+  unset self
+  
+else
+  ########## SELF CALLS ##########
+  git_branch(){
+    if ! [ $(is-git) ]; then
+        return
+    fi
+    branch=$(git current-branch)
+    if [ "$(git stash list)" ]; then
+      branch="!$branch"
+    fi
+    echo " ($branch)"
+  }
+
+  git_color(){
+    if ! [ $(is-git) ]; then
+        return
+    fi
+    state=$(git state)
+    case $(git state) in
+      "up-to-date") style bold green;;
+      "changed") style bold red;;
+      "no-upstream") style bold black;;
+      "diverged") echo -e '\033[01;35m';;
+      "behind") style bold yellow;;
+      "ahead") style bold blue;;
+    esac
+  }
+  
+  git_title(){
+    if ! [ $(is-git) ]; then
+        return
+    fi
+    branch=$(git current-branch)
+    state=$(git state)
+    echo " ($branch, $state)"
+  }
+  
+  $*
+fi
+

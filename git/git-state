@@ -20,12 +20,13 @@ fi
 
 compare=($(git rev-list --left-right --count "$local"..."$upstream"))
 
-if [[ ${compare[1]} > 0 ]]; then
+if [[ ${compare[0]} > 0 ]] && [[ ${compare[1]} > 0 ]]; then
+  echo "diverged"
+  exit
+elif [[ ${compare[1]} > 0 ]]; then
   echo "behind"
   exit
-fi
-
-if [[ ${compare[0]} > 0 ]]; then
+elif [[ ${compare[0]} > 0 ]]; then
   echo "ahead"
   exit
 fi
