@@ -28,7 +28,7 @@ if [[ $# = 0 ]]; then
     # reset style after cmd
     trap "tput sgr0" DEBUG
   else
-    PS1=$PS1'\u@\h:\w$(git_branch)\$ '
+    PS1=$PS1'\u@\h:\w$('$self' git_branch)\$ '
   fi
   unset self
   
